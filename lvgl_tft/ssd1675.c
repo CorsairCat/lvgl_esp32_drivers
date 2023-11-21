@@ -103,20 +103,26 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
     x_addr_counter = EPD_PANEL_WIDTH - 1;
     y_addr_counter = EPD_PANEL_HEIGHT - 1;
 #endif
-    ssd1675_init();
+    // ssd1675_init();
+    /* Configure entry mode  */
+    ssd1675_write_cmd(SSD1675_CMD_ENTRY_MODE, &ssd1675_scan_mode, 1);
+    /* Configure the window */
+    ssd1675_set_window(0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
+    /*set RAM x (0) and y address count */
+    ssd1675_set_cursor(x_addr_counter, y_addr_counter);
 
-    if (!partial_counter) {
+    if (1/*!partial_counter*/) {
         ESP_LOGD(TAG, "Refreshing in FULL");
         ssd1675_send_cmd(SSD1675_CMD_WRITE1_RAM);
         for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++){
             ssd1675_send_data(buffer, linelen);
             buffer += SSD1675_COLUMNS;
         }
-        ssd1675_send_cmd(SSD1675_CMD_WRITE2_RAM);
-        for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++){
-            ssd1675_send_data(buffer, linelen);
-            buffer += SSD1675_COLUMNS;
-        }
+        //ssd1675_send_cmd(SSD1675_CMD_WRITE2_RAM);
+        //for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++){
+        //    ssd1675_send_data(buffer, linelen);
+        //    buffer += SSD1675_COLUMNS;
+        //}
         ssd1675_update_display(false);
         partial_counter = EPD_PARTIAL_CNT;
     } else {
@@ -132,9 +138,9 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
             buffer += SSD1675_COLUMNS; //(128/8)x296 = 4736
         }
         ssd1675_update_display(true);
-        partial_counter--;
+        // partial_counter--;
     }
-    ssd1675_deep_sleep();
+    // ssd1675_deep_sleep();
     /* IMPORTANT!!!
      * Inform the graphics library that you are ready with the flushing */
     lv_disp_flush_ready(drv);
@@ -201,7 +207,7 @@ static void ssd1675_update_display(bool isPartial)
     tmp = 0xC7; //Display mode 1 - Full update
     }
     /* Display Update Control */
-    ssd1675_write_cmd(SSD1675_CMD_UPDATE_CTRL2, &tmp, 1);
+    ssd1675_write_cmd(SSD1675_CMD_UPDATE_CTRL1, &tmp, 1);
     /* Activate Display Update Sequence */
     ssd1675_write_cmd(SSD1675_CMD_MASTER_ACTIVATION, NULL, 0);
     /* Poll BUSY signal. */
@@ -303,9 +309,6 @@ void ssd1675_init(void)
     /* Configure entry mode  */
     ssd1675_write_cmd(SSD1675_CMD_ENTRY_MODE, &ssd1675_scan_mode, 1);
 
-    /* Configure the window */
-    ssd1675_set_window(0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
-
     /* Select border waveform for VBD */
     // ssd1675_write_cmd(SSD1675_CMD_BWF_CTRL, ssd1675_border_init, 1);
 
@@ -322,7 +325,7 @@ void ssd1675_init(void)
     ssd1675_write_cmd(SSD1675_CMD_RAM_XPOS_CTRL, tmp, 4);
 
     // border color
-    tmp[0] = ssd1675_border_init; //0x03;
+    tmp[0] = 0x03; //ssd1675_border_init; //
     ssd1675_write_cmd(SSD1675_CMD_BWF_CTRL, tmp, 1);
 
     // Vcom Voltage
@@ -357,6 +360,9 @@ void ssd1675_init(void)
     tmp[0] = 0xF9;
     tmp[1] = 0;
     ssd1675_write_cmd(SSD1675_CMD_RAM_XPOS_CNTR, tmp, 2);
+
+    /* Configure the window */
+    ssd1675_set_window(0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
 
     /*set RAM x (0) and y (295)  address count */
     ssd1675_set_cursor(0, EPD_PANEL_HEIGHT - 1);
