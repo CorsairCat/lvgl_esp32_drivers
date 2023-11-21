@@ -115,7 +115,7 @@ void ssd1680_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
         ssd1680_update_display(true);
         partial_counter--;
     }
-    ssd1680_deep_sleep();
+    // ssd1680_deep_sleep();
     /* IMPORTANT!!!
      * Inform the graphics library that you are ready with the flushing */
     lv_disp_flush_ready(drv);
@@ -307,20 +307,20 @@ void ssd1680_deep_sleep(void)
     ssd1680_waitbusy(SSD1680_WAIT);
 
     ssd1680_write_cmd(SSD1680_CMD_SLEEP_MODE1, data, 1);
-    vTaskDelay(100 / portTICK_RATE_MS); // 100ms delay
+    vTaskDelay(100 / portTICK_PERIOD_MS); // 100ms delay
 }
 
 static inline void ssd1680_waitbusy(int wait_ms)
 {
     int i = 0;
 
-    vTaskDelay(10 / portTICK_RATE_MS); // 10ms delay
+    vTaskDelay(10 / portTICK_PERIOD_MS); // 10ms delay
 
     for(i = 0; i < (wait_ms * 10); i++) {
         if(gpio_get_level(SSD1680_BUSY_PIN) != SSD1680_BUSY_LEVEL) {
             return;
         }
-        vTaskDelay(10 / portTICK_RATE_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
     ESP_LOGE( TAG, "busy exceeded %dms", i*10 );
 }
@@ -329,9 +329,9 @@ static inline void ssd1680_waitbusy(int wait_ms)
 static inline void ssd1680_hw_reset(void)
 {
     gpio_set_level(SSD1680_RST_PIN, 0);
-    vTaskDelay(SSD1680_RESET_DELAY / portTICK_RATE_MS);
+    vTaskDelay(SSD1680_RESET_DELAY / portTICK_PERIOD_MS);
     gpio_set_level(SSD1680_RST_PIN, 1);
-    vTaskDelay(SSD1680_RESET_DELAY / portTICK_RATE_MS);
+    vTaskDelay(SSD1680_RESET_DELAY / portTICK_PERIOD_MS);
 }
 
 /* Set DC signal to command mode */
