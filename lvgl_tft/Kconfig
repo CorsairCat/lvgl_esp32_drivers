@@ -154,7 +154,7 @@ menu "LVGL TFT Display controller"
         help
             SSD1680 e-paper display controller for GoodDisplay GDEY029T94.
             The resolution must be set as per a portrait mode:
-            LV_HOR_RES_MAX -> 128 and LV_VER_RES_MAX -> 296
+            LV_HOR_RES_MAX -> 168 and LV_VER_RES_MAX -> 296
             And the actual use mode currently is Landskape only.
     
     config LV_TFT_DISPLAY_CONTROLLER_SSD1675
@@ -162,7 +162,7 @@ menu "LVGL TFT Display controller"
         help
             SSD1675 e-paper display controller for GoodDisplay GDEY029T94.
             The resolution must be set as per a portrait mode:
-            LV_HOR_RES_MAX -> 120 and LV_VER_RES_MAX -> 296
+            LV_HOR_RES_MAX -> 152 and LV_VER_RES_MAX -> 296
             And the actual use mode currently is Landskape only.
 
     config LV_TFT_DISPLAY_CONTROLLER_JD79653A

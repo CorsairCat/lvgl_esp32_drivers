@@ -19,7 +19,7 @@ extern "C"
 #include "sdkconfig.h"
 
 #define EPD_PANEL_WIDTH          CONFIG_LV_HOR_RES_MAX   /* 128 */
-#define EPD_PANEL_HEIGHT         CONFIG_LV_VER_RES_MAX   /* 296 */
+#define EPD_PANEL_HEIGHT         CONFIG_LV_VER_RES_MAX   /* 250 */
 
 /* 128 = panel width */
 #define SSD1675_COLUMNS          (EPD_PANEL_WIDTH / 8)
