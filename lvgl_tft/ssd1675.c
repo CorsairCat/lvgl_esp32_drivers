@@ -95,8 +95,10 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
      * we need to cover a line of the display. */
     size_t linelen = EPD_PANEL_WIDTH / 8; //SSD1675_COLUMNS = (EPD_PANEL_WIDTH / 8)
     uint8_t *buffer = (uint8_t *) color_map;
-    uint16_t x_addr_counter = 4;
+    uint16_t x_addr_counter = 0;
     uint16_t y_addr_counter = 0;
+
+    uint16_t x_addr_offset = 0;
 
     /* Set the cursor at the beginning of the graphic RAM */
 #if defined (CONFIG_LV_DISPLAY_ORIENTATION_PORTRAIT)
@@ -107,11 +109,11 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
     /* Configure entry mode  */
     // ssd1675_write_cmd(SSD1675_CMD_ENTRY_MODE, &ssd1675_scan_mode, 1);
     /* Configure the window */
-    ssd1675_set_window(area->y1, area->y2, area->x1, area->x2);//0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
+    ssd1675_set_window(area->y1, area->y2, area->x1+x_addr_offset, area->x2+x_addr_offset);//0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
     /*set RAM x (0) and y address count */
     ssd1675_set_cursor(x_addr_counter, y_addr_counter);
 
-    linelen = (area->y2 - area->y1) / 8;
+    linelen = ((area->y2 - area->y1) >> 3) + 1;
 
     if (true/*!partial_counter*/) {
         ESP_LOGD(TAG, "Refreshing in FULL");
@@ -251,10 +253,10 @@ void ssd1675_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t* buf,
     //} else {
     //   BIT_CLEAR(buf[mirrored_idx - 1], 7 - bit_index);
     //}
-    byte_index = (y * (EPD_PANEL_HEIGHT) + x) >> 3;
-    bit_index  = x & 0x7;
+    byte_index = ((x * (EPD_PANEL_WIDTH)) >> 3) + (y >> 3);
+    bit_index  = y & 0x7;
 
-    if (color.full == 0) {
+    if (color.full != 0) {
         BIT_SET(buf[byte_index], 7 - bit_index);
     } else {
         uint16_t mirrored_idx = (EPD_PANEL_HEIGHT - x) + ((y >> 3) * EPD_PANEL_HEIGHT);
