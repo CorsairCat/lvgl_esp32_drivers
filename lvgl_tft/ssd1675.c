@@ -237,13 +237,13 @@ void ssd1675_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t* buf,
     //} else {
     //   BIT_CLEAR(buf[mirrored_idx - 1], 7 - bit_index);
     //}
-    byte_index = (EPD_PANEL_HEIGHT - x) * (SSD1675_COLUMNS) + (y >> 3);
+    byte_index = (EPD_PANEL_HEIGHT - x - 1) * (SSD1675_COLUMNS) + (y >> 3);
     bit_index  = y & 0x7;
 
     if (color.full != 0) {
         BIT_SET(buf[byte_index], 7 - bit_index);
     } else {
-        uint16_t mirrored_idx = (EPD_PANEL_HEIGHT - x) + ((y >> 3) * EPD_PANEL_HEIGHT);
+        // uint16_t mirrored_idx = (EPD_PANEL_HEIGHT - x) + ((y >> 3) * EPD_PANEL_HEIGHT);
         BIT_CLEAR(buf[byte_index], 7 - bit_index);
         // ESP_LOGI(TAG, "Pos: %d, %d, %d, %d", x, y, byte_index, bit_index);
     }
