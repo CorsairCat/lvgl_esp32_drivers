@@ -118,7 +118,7 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
     ESP_LOGD(TAG, "Refreshing in FULL");
     // ESP_LOGI(TAG, "Area: %d, %d, %d, %d", area->y1, area->y2, area->x1+x_addr_offset, area->x2+x_addr_offset);
     ssd1675_send_cmd(SSD1675_CMD_WRITE1_RAM);
-    for(size_t row = 0; row <= EPD_PANEL_HEIGHT; row++){
+    for(size_t row = 0; row <= (EPD_PANEL_HEIGHT-1); row++){
         ssd1675_send_data(buffer, linelen);
         buffer += linelen;
     }
