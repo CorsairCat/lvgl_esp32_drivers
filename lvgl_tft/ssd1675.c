@@ -47,7 +47,7 @@
 #define EPD_PARTIAL_CNT                 5
 
 //uint8_t ssd1675_scan_mode = SSD1675_DATA_ENTRY_XIYDX; //another approach
-uint8_t ssd1675_scan_mode = SSD1675_DATA_ENTRY_XIYIY; //as per the il3820 driver
+uint8_t ssd1675_scan_mode = SSD1675_DATA_ENTRY_XIYIX; //as per the il3820 driver
 
 static uint8_t partial_counter = 0;
 
@@ -109,41 +109,25 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
     /* Configure entry mode  */
     // ssd1675_write_cmd(SSD1675_CMD_ENTRY_MODE, &ssd1675_scan_mode, 1);
     /* Configure the window */
-    ssd1675_set_window(area->y1, area->y2, area->x1+x_addr_offset, area->x2+x_addr_offset);//0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
+    ssd1675_set_window(area->y1, area->y2, area->x1+x_addr_offset, area->x2+x_addr_offset);//0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1); //
     /*set RAM x (0) and y address count */
     ssd1675_set_cursor(x_addr_counter, y_addr_counter);
 
-    linelen = ((area->y2 - area->y1) >> 3) + 1;
+    linelen = SSD1675_COLUMNS; // ((area->y2 - area->y1) >> 3) + 1;
 
-    if (true/*!partial_counter*/) {
-        ESP_LOGD(TAG, "Refreshing in FULL");
-        ssd1675_send_cmd(SSD1675_CMD_WRITE1_RAM);
-        for(size_t row = 0; row <= (area->x2 - area->x1); row++){
-            ssd1675_send_data(buffer, linelen);
-            buffer += linelen;
-        }
-        //ssd1675_send_cmd(SSD1675_CMD_WRITE2_RAM);
-        //for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++){
-        //    ssd1675_send_data(buffer, linelen);
-        //    buffer += SSD1675_COLUMNS;
-        //}
-        ssd1675_update_display(false);
-        partial_counter = EPD_PARTIAL_CNT;
-    } else {
-        //update partial, not support by ssd1675
-        ssd1675_hw_reset();
-        ssd1675_write_cmd(SSD1675_CMD_BWF_CTRL, ssd1675_border_part, 1);
-        ssd1675_set_window(area->x1, area->x2, area->y1, area->y2);
-        ssd1675_set_cursor(x_addr_counter, y_addr_counter);
-
-        ssd1675_send_cmd(SSD1675_CMD_WRITE1_RAM);
-        for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++) {
-            ssd1675_send_data(buffer, linelen);
-            buffer += SSD1675_COLUMNS; //(128/8)x296 = 4736
-        }
-        ssd1675_update_display(true);
-        // partial_counter--;
+    ESP_LOGD(TAG, "Refreshing in FULL");
+    // ESP_LOGI(TAG, "Area: %d, %d, %d, %d", area->y1, area->y2, area->x1+x_addr_offset, area->x2+x_addr_offset);
+    ssd1675_send_cmd(SSD1675_CMD_WRITE1_RAM);
+    for(size_t row = 0; row <= EPD_PANEL_HEIGHT; row++){
+        ssd1675_send_data(buffer, linelen);
+        buffer += linelen;
     }
+    //ssd1675_send_cmd(SSD1675_CMD_WRITE2_RAM);
+    //for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++){
+    //    ssd1675_send_data(buffer, linelen);
+    //    buffer += SSD1675_COLUMNS;
+    //}
+    ssd1675_update_display(false);
     // ssd1675_deep_sleep();
     /* IMPORTANT!!!
      * Inform the graphics library that you are ready with the flushing */
@@ -253,7 +237,7 @@ void ssd1675_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t* buf,
     //} else {
     //   BIT_CLEAR(buf[mirrored_idx - 1], 7 - bit_index);
     //}
-    byte_index = ((x * (EPD_PANEL_WIDTH)) >> 3) + (y >> 3);
+    byte_index = (EPD_PANEL_HEIGHT - x) * (SSD1675_COLUMNS) + (y >> 3);
     bit_index  = y & 0x7;
 
     if (color.full != 0) {
@@ -261,6 +245,7 @@ void ssd1675_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t* buf,
     } else {
         uint16_t mirrored_idx = (EPD_PANEL_HEIGHT - x) + ((y >> 3) * EPD_PANEL_HEIGHT);
         BIT_CLEAR(buf[byte_index], 7 - bit_index);
+        // ESP_LOGI(TAG, "Pos: %d, %d, %d, %d", x, y, byte_index, bit_index);
     }
 // #else
 // #error "Unsupported orientation used"
@@ -270,9 +255,9 @@ void ssd1675_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t* buf,
 /* Required by LVGL */
 void ssd1675_rounder(lv_disp_drv_t * disp_drv, lv_area_t *area)
 {
-    area->x1 = area->x1 & ~(0x7);
-    area->x2 = area->x2 |  (0x7);
-
+    // area->x1 = area->x1 & ~(0x7);
+    // area->x2 = area->x2 |  (0x7);
+    // do nothing, update all
     /* Update the areas as needed.
      * For example it makes the area to start only on 8th rows and have Nx8 pixel height.*/
 }
