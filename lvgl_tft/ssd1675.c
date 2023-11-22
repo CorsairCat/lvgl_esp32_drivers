@@ -47,7 +47,7 @@
 #define EPD_PARTIAL_CNT                 5
 
 //uint8_t ssd1675_scan_mode = SSD1675_DATA_ENTRY_XIYDX; //another approach
-uint8_t ssd1675_scan_mode = SSD1675_DATA_ENTRY_XIYIX; //as per the il3820 driver
+uint8_t ssd1675_scan_mode = SSD1675_DATA_ENTRY_XIYIY; //as per the il3820 driver
 
 static uint8_t partial_counter = 0;
 
@@ -95,7 +95,7 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
      * we need to cover a line of the display. */
     size_t linelen = EPD_PANEL_WIDTH / 8; //SSD1675_COLUMNS = (EPD_PANEL_WIDTH / 8)
     uint8_t *buffer = (uint8_t *) color_map;
-    uint16_t x_addr_counter = 0;
+    uint16_t x_addr_counter = 4;
     uint16_t y_addr_counter = 0;
 
     /* Set the cursor at the beginning of the graphic RAM */
@@ -103,20 +103,22 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
     x_addr_counter = EPD_PANEL_WIDTH - 1;
     y_addr_counter = EPD_PANEL_HEIGHT - 1;
 #endif
-    ssd1675_init();
+    // ssd1675_init();
     /* Configure entry mode  */
     // ssd1675_write_cmd(SSD1675_CMD_ENTRY_MODE, &ssd1675_scan_mode, 1);
     /* Configure the window */
-    // ssd1675_set_window(area->x1, area->x2, area->y1, area->y2);//0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
+    ssd1675_set_window(area->y1, area->y2, area->x1, area->x2);//0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
     /*set RAM x (0) and y address count */
     ssd1675_set_cursor(x_addr_counter, y_addr_counter);
 
-    if (1/*!partial_counter*/) {
+    linelen = (area->y2 - area->y1) / 8;
+
+    if (true/*!partial_counter*/) {
         ESP_LOGD(TAG, "Refreshing in FULL");
         ssd1675_send_cmd(SSD1675_CMD_WRITE1_RAM);
-        for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++){
+        for(size_t row = 0; row <= (area->x2 - area->x1); row++){
             ssd1675_send_data(buffer, linelen);
-            buffer += SSD1675_COLUMNS;
+            buffer += linelen;
         }
         //ssd1675_send_cmd(SSD1675_CMD_WRITE2_RAM);
         //for(size_t row = 0; row <= (EPD_PANEL_HEIGHT - 1); row++){
@@ -140,7 +142,7 @@ void ssd1675_flush(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_
         ssd1675_update_display(true);
         // partial_counter--;
     }
-    ssd1675_deep_sleep();
+    // ssd1675_deep_sleep();
     /* IMPORTANT!!!
      * Inform the graphics library that you are ready with the flushing */
     lv_disp_flush_ready(drv);
@@ -249,14 +251,14 @@ void ssd1675_set_px_cb(lv_disp_drv_t * disp_drv, uint8_t* buf,
     //} else {
     //   BIT_CLEAR(buf[mirrored_idx - 1], 7 - bit_index);
     //}
-    byte_index = (EPD_PANEL_HEIGHT - x) + ((y >> 3) * EPD_PANEL_HEIGHT);
-    bit_index  = y & 0x7;
+    byte_index = (y * (EPD_PANEL_HEIGHT) + x) >> 3;
+    bit_index  = x & 0x7;
 
-    if (color.full != 0) {
-        BIT_SET(buf[byte_index-1], 7 - bit_index);
+    if (color.full == 0) {
+        BIT_SET(buf[byte_index], 7 - bit_index);
     } else {
         uint16_t mirrored_idx = (EPD_PANEL_HEIGHT - x) + ((y >> 3) * EPD_PANEL_HEIGHT);
-        BIT_CLEAR(buf[byte_index-1], 7 - bit_index);
+        BIT_CLEAR(buf[byte_index], 7 - bit_index);
     }
 // #else
 // #error "Unsupported orientation used"
@@ -309,8 +311,8 @@ void ssd1675_init(void)
     ssd1675_write_cmd(SSD1675_CMD_DIGITALBLOCK, tmp, 1);
 
     /* Driver output control */
-    tmp[0] = 0xFA; //(EPD_PANEL_HEIGHT - 1) & 0xFF; //0x27
-    tmp[1] = 0x01; //(EPD_PANEL_HEIGHT >> 8 );      //0x01
+    tmp[0] = (EPD_PANEL_HEIGHT - 1) & 0xFF; //(EPD_PANEL_HEIGHT - 1) & 0xFF; //0x27
+    tmp[1] = (EPD_PANEL_HEIGHT >> 8); //(EPD_PANEL_HEIGHT >> 8 );      //0x01
     tmp[2] = 0x00; // GD = 0; SM = 0; TB = 0;  //0x00
     ssd1675_write_cmd(SSD1675_CMD_GDO_CTRL, tmp, 3);
 
@@ -323,7 +325,7 @@ void ssd1675_init(void)
     ssd1675_write_cmd(SSD1675_CMD_WRITE_GATELINE, tmp, 1);
 
     // border color
-    tmp[0] = 0x03; //ssd1675_border_init; //
+    tmp[0] = 0x05; //ssd1675_border_init; //
     ssd1675_write_cmd(SSD1675_CMD_BWF_CTRL, tmp, 1);
 
         // Vcom Voltage
@@ -354,7 +356,7 @@ void ssd1675_init(void)
     // Set ram Y start/end postion
     tmp[0] = 0x00; // 0xF9-->(249+1)=250
     tmp[1] = 0x00;
-    tmp[2] = 0xF9;
+    tmp[2] = 0xFF;
     tmp[3] = 0x00;
     ssd1675_write_cmd(SSD1675_CMD_RAM_YPOS_CTRL, tmp, 4);
 
@@ -366,20 +368,21 @@ void ssd1675_init(void)
     tmp[0] = 0x0;
     tmp[1] = 0;
     ssd1675_write_cmd(SSD1675_CMD_RAM_YPOS_CNTR, tmp, 2);
-    /*===========END OF DEFAULT INITIAL SEQUENCE==========*/
-
-    /* Useless functions according to SSD 1675 Datasheet
 
     tmp[0] = 0x40;
     ssd1675_write_cmd(SSD1675_CMD_UPDATE_CTRL1, &tmp, 1);
+    /*===========END OF DEFAULT INITIAL SEQUENCE==========*/
+
+    /* Useless functions according to SSD 1675 Datasheet
 
     ssd1675_waitbusy(SSD1675_WAIT);
     */
 
     //
-    ssd1675_set_window(0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
+    // ssd1675_set_window(0, EPD_PANEL_WIDTH - 1, 0, EPD_PANEL_HEIGHT - 1);
     // set RAM x (0) and y (295)  address count
     ssd1675_set_cursor(0, 0);//EPD_PANEL_HEIGHT - 1);
+    ssd1675_update_display(true);
 }
 
 /* Enter deep sleep mode */
