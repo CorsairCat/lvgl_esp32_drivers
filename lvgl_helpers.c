@@ -177,7 +177,7 @@ bool lvgl_spi_driver_init(int host,
     ESP_LOGI(TAG, "Initializing SPI bus...");
 
     esp_err_t ret = spi_bus_initialize(host, &buscfg, SPI_DMA_CH_AUTO);
-    assert(ret == ESP_OK);
+    assert((ret == ESP_OK) || (ret == ESP_ERR_INVALID_STATE));
 
-    return ESP_OK != ret;
+    return (!(ret == ESP_OK) || (ret == ESP_ERR_INVALID_STATE));//(ESP_OK != ret);
 }
