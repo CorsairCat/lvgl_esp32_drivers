@@ -268,14 +268,14 @@ void ssd1675_init(void)
     uint8_t tmp[4] = {0};
 
     /* Initialize non-SPI GPIOs */
-    gpio_pad_select_gpio(SSD1675_DC_PIN);
+    esp_rom_gpio_pad_select_gpio(SSD1675_DC_PIN);
     gpio_set_direction(SSD1675_DC_PIN, GPIO_MODE_OUTPUT);
 
-    gpio_pad_select_gpio(SSD1675_BUSY_PIN);
+    esp_rom_gpio_pad_select_gpio(SSD1675_BUSY_PIN);
     gpio_set_direction(SSD1675_BUSY_PIN,  GPIO_MODE_INPUT);
 
 #if SSD1675_USE_RST
-    gpio_pad_select_gpio(SSD1675_RST_PIN);
+    esp_rom_gpio_pad_select_gpio(SSD1675_RST_PIN);
     gpio_set_direction(SSD1675_RST_PIN, GPIO_MODE_OUTPUT);
 
     /* Harware reset */
